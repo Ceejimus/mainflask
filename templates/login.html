@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container form-container">
+        <h1>Login</h1>
+        <br>
+        <form class="form-horizontal" action="" method="post">
+            {{ form.hidden_tag() }}
+            {{ form_helpers.simple_field("Email", form.email, placeholder="email") }}
+            {{ form_helpers.password_field("Password", form.password, placeholder="password") }}
+            <br/>
+            <div class="row">
+                <input class="btn btn-primary pull-right" type="submit" value="Login">
+            </div>
+             {# <span>{{ form.remember_me }} Remember Me</span> #}
+        </form>
+        <div class="row">
+            <div style="text-align: center">
+                <span>-- or --</span>
+            </div>
+            <br/>
+            <div class="btn-create-new-user">
+                <a href="/account/create" class="btn btn-info">Create New Account</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

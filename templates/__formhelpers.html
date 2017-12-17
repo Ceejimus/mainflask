@@ -1,0 +1,31 @@
+{% macro simple_field(label, field) %}
+  <div class="row">
+      <div class="form-group">
+          <label class="control-label col-sm-4">{{ label }}:</label>
+          <div class="col-sm-8">
+          {{ field(class_="form-control", **kwargs)|safe }}
+          <ul class=errors>
+            {% for error in field.errors %}
+              <li style="color: red;">[{{ error }}]</li>
+            {% endfor %}
+          </ul>
+          </div>
+      </div>
+  </div>
+{% endmacro %}
+
+{% macro password_field(label, field) %}
+  <div class="row">
+      <div class="form-group">
+          <label class="control-label col-sm-4">{{ label }}:</label>
+          <div class="col-sm-8">
+          {{ field(class_="form-control", type="password", **kwargs)|safe }}
+          <ul class=errors>
+            {% for error in field.errors %}
+              <li style="color: red;">[{{ error }}]</li>
+            {% endfor %}
+          </ul>
+          </div>
+      </div>
+  </div>
+{% endmacro %}

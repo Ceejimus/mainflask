@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container form-container">
+        <h1>Create a New Account</h1>
+        <br>
+        <form class="form-horizontal" action="" method="post">
+            {{ form.hidden_tag() }}
+            {{ form_helpers.simple_field("Username", form.username, placeholder="username") }}
+        	{{ form_helpers.simple_field("Email", form.email, placeholder="email") }}
+        	{{form_helpers.password_field("Password", form.password, placeholder="password")}}
+        	{{form_helpers.password_field("Confirm Password", form.confirm_password, placeholder="confirm password")}}
+            <br/>
+            <div class="row">
+                <input class="btn btn-primary pull-right" type="submit" value="Create">
+            </div>
+        </form>
+    </div>
+{% endblock %}
