@@ -31,3 +31,16 @@ class CreateUserForm(FlaskForm):
             EqualTo('password', message="Oops! Passwords don't match...")
         ]
     )
+
+
+class LoginForm(FlaskForm):
+    username = StringField('username',
+        validators=[
+            DataRequired()
+        ]
+    )
+    password = PasswordField('password',
+        validators=[
+            DataRequired()
+        ]
+    )
