@@ -1,4 +1,5 @@
 """entrypoint for flask app."""
+import json
 from flask import Flask, render_template, redirect, url_for, request
 from flask import make_response
 from domain import AuthDomain
@@ -8,12 +9,16 @@ application = Flask(__name__)
 application.static_url_path = "/static"
 application.secret_key = 'AfUHFkB6s&PIVULP3IUgNMjZYA9uN96R'
 
+with open  ('config.json', 'r') as f:
+    data = json.load(f)
+    print(data)
 
-HOST = "192.168.0.104"
-PORT = 5432
-DB = "main"
-USER = "postgres"
-PASS = "postgres"
+HOST = data["HOST"]
+PORT = int(data["PORT"])
+DB = data["DB"]
+USER = data["USER"]
+PASS = data["PASS"]
+
 
 auth_domain = AuthDomain(HOST, PORT, DB, USER, PASS)
 
