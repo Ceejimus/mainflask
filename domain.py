@@ -70,7 +70,7 @@ class AuthDomain():
         password_hash = hash_password(string_to_bytes(password), user.salt)
         if (password_hash == user.password_hash):
             token = str(uuid.uuid4())
-            self.add_token(token)
+            self.add_token(token, username)
             return token
 
         return None
@@ -88,24 +88,27 @@ class AuthDomain():
         return True
 
 
-    def is_token_valid(self, token):
+    def get_user_for_token(self, token):
         return self.check_token(token)
 
-    def add_token(self, token):
+    def add_token(self, token, username):
         millis = int(round(time.time()) * 1000)
-        self.tokens[token] = millis + (12 * 60 * 60 * 1000)
+        self.tokens[token] = {
+            'username': username,
+            'exp': millis + (12 * 60 * 60 * 1000)
+        }
 
     def check_token(self, token):
         if (token not in self.tokens):
-            return False
+            return None
         else:
             millis = int(round(time.time()) * 1000)
-            if (self.tokens[token] < millis):
+            if (self.tokens[token]['exp'] < millis):
                 self.tokens.pop(token, None)
-                return False
+                return None
 
-            self.tokens[token] = millis + (12 * 60 * 60 * 1000)
-            return True
+            self.tokens[token]['exp'] = millis + (12 * 60 * 60 * 1000)
+            return self.tokens[token]['username']
 
 
 class User(Base):

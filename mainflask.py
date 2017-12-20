@@ -1,5 +1,5 @@
 """entrypoint for flask app."""
-from flask import Flask, render_template, redirect, url_for, request
+from flask import Flask, render_template, redirect, url_for, request, session
 from flask import make_response
 from domain import AuthDomain
 from forms import CreateUserForm, LoginForm
@@ -21,24 +21,15 @@ auth_domain = AuthDomain(HOST, PORT, DB, USER, PASS)
 def login_required(fn):
     @wraps(fn)
     def _fn(*args, **kwargs):
-        import sys
-        print('checking token', file=sys.stderr)
-        cookies = request.cookies
-        is_token_valid = True
-        if ('Atmoscape-Token' not in cookies):
-            print('notoken', file=sys.stderr)
-            is_token_valid = False
-        else:
-            print('checking token validity', file=sys.stderr)
-            token = cookies['Atmoscape-Token']
-            print('checking token validity'+token, file=sys.stderr)
-            is_token_valid = auth_domain.is_token_valid(token)
+        username = None
+        if ('Atmoscape-Token' in session):
+            token = session['Atmoscape-Token']
+            username = auth_domain.get_user_for_token(token)
 
-        if (is_token_valid is not True):
-            print('token not valid', file=sys.stderr)
+        if (username is None):
             return redirect(url_for('get_login_form'))
         else:
-            print('token valid', file=sys.stderr)
+            session['username'] = username
             return fn(*args, **kwargs)
 
     return _fn
@@ -47,7 +38,10 @@ def login_required(fn):
 @application.route("/", methods=['GET'])
 @login_required
 def index():
-    return "HOME"
+    return render_template(
+        "home.html",
+        username=session['username']
+    )
 
 
 @application.route("/account/create", methods=['GET'])
@@ -109,7 +103,7 @@ def login():
             import sys
             print(token, file=sys.stderr)
             resp = make_response(redirect(url_for('index')))
-            resp.set_cookie('Atmoscape-Token', token)
+            session['Atmoscape-Token'] = token
             return resp
         else:
             form.username.errors.append("User/Password incorrect")
