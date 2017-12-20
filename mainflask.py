@@ -34,9 +34,8 @@ def login_required(fn):
             print('notoken', file=sys.stderr)
             is_token_valid = False
         else:
-            print('checking token validity', file=sys.stderr)
             token = cookies['Atmoscape-Token']
-            print('checking token validity'+token, file=sys.stderr)
+            print('checking token validity: '+token, file=sys.stderr)
             is_token_valid = auth_domain.is_token_valid(token)
 
         if (is_token_valid is not True):

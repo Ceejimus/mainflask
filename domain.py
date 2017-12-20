@@ -69,9 +69,11 @@ class AuthDomain():
         if (len(users) == 0):
             return None
         user = users[0]
+        print("What the f")
         password_hash = hash_password(string_to_bytes(password), user.salt)
         if (password_hash == user.password_hash):
             token = str(uuid.uuid4())
+            print("What the frick")
             self.add_token(token)
             return token
 
@@ -81,11 +83,15 @@ class AuthDomain():
         return self.check_token(token)
 
     def add_token(self, token):
+        print("What the fuck")
         yield from self.lock
         try:
             millis = int(round(time.time()) * 1000)
             self.tokens[token] = millis + (12 * 60 * 60 * 1000)
+            print("tokens inside add_token: ")
+            print(self.tokens[token])
         finally:
+            print('Failed')
             self.lock.release()
 
     def check_token(self, token):
