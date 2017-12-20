@@ -5,7 +5,6 @@ from sqlalchemy import Column, Integer, String, LargeBinary
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import uuid
-from asyncio import Lock
 import time
 import hashlib
 import os
@@ -41,7 +40,6 @@ class AuthDomain():
         )
         self.Session = sessionmaker(bind=self.engine)
         self.tokens = {}
-        self.lock = Lock()
 
     def get_users(self):
         session = self.Session()
@@ -77,37 +75,37 @@ class AuthDomain():
 
         return None
 
+    def delete_user(self, username):
+        session = self.Session()
+        users = session.query(User).filter(User.username == username).all()
+        if (len(users) == 0):
+            return False
+
+        for user in users:
+            session.delete(user)
+
+        session.commit()
+        return True
+
+
     def is_token_valid(self, token):
         return self.check_token(token)
 
     def add_token(self, token):
-        yield from self.lock
-        try:
-            millis = int(round(time.time()) * 1000)
-            self.tokens[token] = millis + (12 * 60 * 60 * 1000)
-        finally:
-            self.lock.release()
+        millis = int(round(time.time()) * 1000)
+        self.tokens[token] = millis + (12 * 60 * 60 * 1000)
 
     def check_token(self, token):
-        import sys
-        print('CHECKTOKEN', file=sys.stderr)
-        yield from self.lock
-        try:
-            if (token not in self.tokens):
-                print('no token in tokens', file=sys.stderr)
+        if (token not in self.tokens):
+            return False
+        else:
+            millis = int(round(time.time()) * 1000)
+            if (self.tokens[token] < millis):
+                self.tokens.pop(token, None)
                 return False
-            else:
-                millis = int(round(time.time()) * 1000)
-                if (self.tokens[token] > millis):
-                    print('token expired', file=sys.stderr)
-                    self.tokens.pop(token, None)
-                    return False
 
-                print('token valid', file=sys.stderr)
-                self.tokens[token] = millis + (12 * 60 * 60 * 1000)
-                return True
-        finally:
-            self.lock.release()
+            self.tokens[token] = millis + (12 * 60 * 60 * 1000)
+            return True
 
 
 class User(Base):
