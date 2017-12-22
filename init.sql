@@ -1,9 +1,7 @@
 CREATE SCHEMA authentication;
 
-create sequence "authentication"."user_id_seq";
-
 create table "authentication"."user" (
-    "id" integer not null default nextval('user_id_seq'::regclass),
+    "id" serial not null,
     "username" text not null,
     "email" text not null,
     "password_hash" bytea not null,
@@ -28,5 +26,6 @@ alter table "authentication"."user" add constraint "user_pkey" PRIMARY KEY using
 alter table "authentication"."user" add constraint "user_email_key" UNIQUE using index "user_email_key";
 
 alter table "authentication"."user" add constraint "user_username_key" UNIQUE using index "user_username_key";
+
 
 
