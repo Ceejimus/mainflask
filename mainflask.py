@@ -14,11 +14,11 @@ with open  ('config.json', 'r') as f:
     data = json.load(f)
     print(data)
 
-HOST = data["HOST"]
-PORT = int(data["PORT"])
-DB = data["DB"]
-USER = data["USER"]
-PASS = data["PASS"]
+HOST = data["host"]
+PORT = int(data["port"])
+DB = data["db"]
+USER = data["user"]
+PASS = data["pass"]
 
 auth_domain = AuthDomain(HOST, PORT, DB, USER, PASS)
 
