@@ -1,0 +1,10 @@
+{% extends "navbar.html" %}
+
+{% block navbar %}
+<div id="pending-users">
+	<h4>Pending Users</h4>
+    {% for pending_user in pending_users %}
+        <li>{{ pending_user.username }}</li>
+    {% endfor %}
+</div>
+{% endblock %}

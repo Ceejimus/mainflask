@@ -1,9 +1,11 @@
 """definitions and classes for working with db."""
 # import json
-from sqlalchemy import create_engine, MetaData
+from sqlalchemy import create_engine, MetaData, and_, or_, not_
 from sqlalchemy import Column, Integer, String, LargeBinary
+from sqlalchemy import Table, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.dialects.postgresql import BOOLEAN
+from sqlalchemy.orm import sessionmaker, relationship
 import uuid
 import time
 import hashlib
@@ -31,6 +33,7 @@ def hash_password(password_bytes, salt_bytes):
 
 
 class AuthDomain():
+
     def __init__(self, host, port, name, user, password):
         self.engine = create_engine(
             "postgresql://{}:{}@{}:{}/{}".format(
@@ -56,16 +59,42 @@ class AuthDomain():
             username=username,
             email=email,
             password_hash=password_hash,
-            salt=salt_bytes
+            salt=salt_bytes,
+            pending=True
         )
         session.add(user)
         session.commit()
+        session.close()
+
+    def activate_user(self, username):
+        session = self.Session()
+        users = session.query(User).filter(User.username == username).all()
+        if len(users) == 0:
+            return False
+
+        user = users[0]
+        user.pending = False
+        session.commit()
+        session.close()
+        return True
+
+    def get_pending_users(self):
+        session = self.Session()
+        users = session.query(User).filter(User.pending).all()
+        session.close()
+        return users
 
     def login(self, username, password):
         session = self.Session()
-        users = session.query(User).filter(User.username == username).all()
+        users = session.query(User).filter(
+            and_(User.username == username, not_(User.pending))).all()
         if (len(users) == 0):
             return None
+
+        for user in users:
+            print(user.pending)
+            for group in user.groups:
+                print(group.name)
         user = users[0]
         password_hash = hash_password(string_to_bytes(password), user.salt)
         if (password_hash == user.password_hash):
@@ -73,6 +102,7 @@ class AuthDomain():
             self.add_token(token, username)
             return token
 
+        session.close()
         return None
 
     def delete_user(self, username):
@@ -85,8 +115,8 @@ class AuthDomain():
             session.delete(user)
 
         session.commit()
+        session.close()
         return True
-
 
     def get_user_for_token(self, token):
         return self.check_token(token)
@@ -110,6 +140,11 @@ class AuthDomain():
             self.tokens[token]['exp'] = millis + (12 * 60 * 60 * 1000)
             return self.tokens[token]['username']
 
+usergroup = Table('usergroup', Base.metadata,
+      Column('userid', Integer, ForeignKey('user.id')),
+      Column('groupid', String, ForeignKey('group.id'))
+  )
+
 
 class User(Base):
     __tablename__ = 'user'
@@ -119,6 +154,18 @@ class User(Base):
     email = Column(String)
     password_hash = Column(LargeBinary)
     salt = Column(LargeBinary)
+    pending = Column(BOOLEAN)
+
+    groups = relationship("Group", secondary=usergroup)
 
     def __repr__(self):
         return "{} - {}".format(self.username, self.email)
+
+
+class Group(Base):
+    __tablename__ = 'group'
+
+    id = Column(String, primary_key=True)
+    name = Column(String)
+
+    users = relationship("User", secondary=usergroup)

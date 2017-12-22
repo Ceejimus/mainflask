@@ -100,7 +100,6 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         import sys
-        print("debug", file=sys.stderr)
         username = form.username.data
         password = form.password.data
         token = auth_domain.login(username, password)
@@ -117,6 +116,15 @@ def login():
         "login.html",
         title="Login",
         form=form
+    )
+
+
+@application.route("/admin", methods=['GET'])
+def admin():
+    return render_template(
+        "admin.html",
+        title="Admin",
+        pending_users=auth_domain.get_pending_users()
     )
 
 
