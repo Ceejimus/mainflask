@@ -50,6 +50,14 @@ class AuthDomain():
         session.close()
         return users
 
+    def get_user_by_id(self, userId):
+        session = self.Session()
+        user = session.query(User).get(userId)
+        groups = user.groups
+        session.close()
+        return user, groups
+
+
     def add_user(self, username, email, password):
         session = self.Session()
         salt_bytes = os.urandom(32)
@@ -84,6 +92,12 @@ class AuthDomain():
         session.close()
         return users
 
+    def get_groups(self):
+        session = self.Session()
+        users = session.query(Group).all()
+        session.close()
+        return users
+
     def login(self, username, password):
         session = self.Session()
         users = session.query(User).filter(
@@ -99,32 +113,41 @@ class AuthDomain():
         password_hash = hash_password(string_to_bytes(password), user.salt)
         if (password_hash == user.password_hash):
             token = str(uuid.uuid4())
-            self.add_token(token, username)
+            self.add_token(token, user)
             return token
 
         session.close()
         return None
 
-    def delete_user(self, username):
+    def delete_user(self, userid):
         session = self.Session()
-        users = session.query(User).filter(User.username == username).all()
-        if (len(users) == 0):
-            return False
+        user = session.query(User).get(userid)
+        session.delete(user)
+        session.commit()
+        session.close()
+        return True
 
-        for user in users:
-            session.delete(user)
+    def accept_user(self, userid, groupid):
+        session = self.Session()
+
+        user = session.query(User).get(userid)
+        group = session.query(Group).get(groupid)
+
+        user.pending = False
+        user.groups.append(group)
 
         session.commit()
         session.close()
         return True
 
+
     def get_user_for_token(self, token):
         return self.check_token(token)
 
-    def add_token(self, token, username):
+    def add_token(self, token, user):
         millis = int(round(time.time()) * 1000)
         self.tokens[token] = {
-            'username': username,
+            'userId': user.id,
             'exp': millis + (12 * 60 * 60 * 1000)
         }
 
@@ -138,7 +161,7 @@ class AuthDomain():
                 return None
 
             self.tokens[token]['exp'] = millis + (12 * 60 * 60 * 1000)
-            return self.tokens[token]['username']
+            return self.tokens[token]['userId']
 
 usergroup = Table('usergroup', Base.metadata,
       Column('userid', Integer, ForeignKey('user.id')),
