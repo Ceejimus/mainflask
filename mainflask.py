@@ -185,21 +185,27 @@ def allowed_file(filename):
 @application.route('/uploader', methods = ['GET', 'POST'])
 @auth_required()
 def upload_filer():
-    print("debug")
+
     if request.method == 'POST':
+        print(request.files['file'])
         # check if the post request has the file part
+        #print(request.files['file'])
         if 'file' not in request.files:
-            return render_template('fileupload.html')
+            print("debug1")
+            return json.dumps({'success': request.json}), 200, { 'ContentType':'application/json' }
         file = request.files['file']
         # if user does not select file, browser also
         # submit a empty part without filename
         if file.filename == '':
-            return render_template('fileupload.html')
+            print("debug2")
+            return json.dumps({'success': request.json}), 200, { 'ContentType':'application/json' }
         if file and allowed_file(file.filename):
+            print("debug3")
             filename = secure_filename(file.filename)
             print("saving to {}".format(os.path.join(application.config['UPLOAD_FOLDER'], filename)))
             file.save(os.path.join(application.config['UPLOAD_FOLDER'], filename))
-            return render_template('fileupload.html')
+            return json.dumps({'success': request.json}), 200, { 'ContentType':'application/json' }
+    print("debug4")
     return render_template('fileupload.html')
 
 if __name__ == '__main__':

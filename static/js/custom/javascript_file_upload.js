@@ -8,49 +8,45 @@ var FileUpload = (function() {
         };
     };
 
-    var startUpload = function(files) {
-        for (var i =0; i<files.length; i++)
-        {   
-            console.log()
-            var formData = new FormData();
-            formData.append("file", files[i]);
-            console.log("debug4")
-            var promise = $.ajax({
-                xhr : function() {
-                var xhr = new window.XMLHttpRequest();
+    var startUpload = function(files, path) {
+        console.log(files)
+        var formData = new FormData();
+        formData.append("file", files, path+files.name);
+        var promise = $.ajax({
+            xhr : function() {
+            var xhr = new window.XMLHttpRequest();
 
-                xhr.upload.addEventListener('progress', function(e) {
+            xhr.upload.addEventListener('progress', function(e) {
 
-                     if (e.lengthComputable) {
+                 if (e.lengthComputable) {
 
-                        console.log('Bytes Loaded: ' + e.loaded);
-                        console.log('Total Size: ' + e.total);
-                        console.log('Percentage Uploaded: ' + (e.loaded / e.total))
+                    console.log('Bytes Loaded: ' + e.loaded);
+                    console.log('Total Size: ' + e.total);
+                    console.log('Percentage Uploaded: ' + (e.loaded / e.total))
 
-                        var percent = Math.round((e.loaded / e.total) * 100);
+                    var percent = Math.round((e.loaded / e.total) * 100);
 
-                        $('#progressBar').attr('aria-valuenow', percent).css('width', percent + '%').text(percent + '%');
+                    $('#progressBar').attr('aria-valuenow', percent).css('width', percent + '%').text(percent + '%');
 
-                    }
-
-                 });
-
-                 return xhr;
-                },
-                url: "/uploader",
-                method: "post",
-                processData: false,
-                contentType: false,
-                data: formData,
-                success: function(data) {
-                        alert('success');
-                    },
-                error: function(data) {
-                        alert('fail');
-                        console.log(data);
                 }
-            });
-        }
+
+             });
+
+             return xhr;
+            },
+            url: "/uploader",
+            method: "post",
+            processData: false,
+            contentType: false,
+            data: formData,
+            success: function(data) {
+                    console.log(data);
+                },
+            error: function(data) {
+                    console.log(data);
+            }
+        });
+        
     };
 
     var traverseFileTree = function(item, path) {
@@ -59,6 +55,7 @@ var FileUpload = (function() {
         // Get file
         item.file(function(file) {
           console.log("File:", path + file.name);
+          startUpload(file, path);
         });
       } else if (item.isDirectory) {
         // Get folder contents
