@@ -9,43 +9,48 @@ var FileUpload = (function() {
     };
 
     var startUpload = function(files) {
-        var formData = new FormData();
-        formData.append("file", files[0]);
-        var promise = $.ajax({
-            xhr : function() {
-            var xhr = new window.XMLHttpRequest();
+        for (var i =0; i<files.length; i++)
+        {   
+            console.log()
+            var formData = new FormData();
+            formData.append("file", files[i]);
+            console.log("debug4")
+            var promise = $.ajax({
+                xhr : function() {
+                var xhr = new window.XMLHttpRequest();
 
-            xhr.upload.addEventListener('progress', function(e) {
+                xhr.upload.addEventListener('progress', function(e) {
 
-                 if (e.lengthComputable) {
+                     if (e.lengthComputable) {
 
-                    console.log('Bytes Loaded: ' + e.loaded);
-                    console.log('Total Size: ' + e.total);
-                    console.log('Percentage Uploaded: ' + (e.loaded / e.total))
+                        console.log('Bytes Loaded: ' + e.loaded);
+                        console.log('Total Size: ' + e.total);
+                        console.log('Percentage Uploaded: ' + (e.loaded / e.total))
 
-                    var percent = Math.round((e.loaded / e.total) * 100);
+                        var percent = Math.round((e.loaded / e.total) * 100);
 
-                    $('#progressBar').attr('aria-valuenow', percent).css('width', percent + '%').text(percent + '%');
+                        $('#progressBar').attr('aria-valuenow', percent).css('width', percent + '%').text(percent + '%');
 
-                }
+                    }
 
-             });
+                 });
 
-             return xhr;
-            },
-            url: "/uploader",
-            method: "post",
-            processData: false,
-            contentType: false,
-            data: formData,
-            success: function(data) {
-                    alert('success');
+                 return xhr;
                 },
-            error: function(data) {
-                    alert('fail');
-                    console.log(data);
-            }
-        });
+                url: "/uploader",
+                method: "post",
+                processData: false,
+                contentType: false,
+                data: formData,
+                success: function(data) {
+                        alert('success');
+                    },
+                error: function(data) {
+                        alert('fail');
+                        console.log(data);
+                }
+            });
+        }
     };
 
     var traverseFileTree = function(item, path) {
@@ -68,16 +73,18 @@ var FileUpload = (function() {
 
     var bindEvents = function(elements) {
         elements.UploadForm.on('submit', function(e) {
-            evt.preventDefault();
-            var files = evt.originalEvent.dataTransfer.files;
-
+            console.log("debug2")
+            e.preventDefault();
+            var files = e.originalEvent.dataTransfer.files;
             startUpload(files)
         })
 
         elements.DropZone.on('drop', function(e) {
+            e.stopPropagation();
             e.preventDefault();
+            console.log(e)
             $(this).addClass('upload-drop-zone');
-
+            console.log("debug3")
             // startUpload(e.originalEvent.dataTransfer.files);
             var items = e.originalEvent.dataTransfer.items;
               for (var i=0; i<items.length; i++) {
@@ -97,6 +104,7 @@ var FileUpload = (function() {
     };
 
     var init = function() {
+        console.log("debug1")
         var elements = getElements();
         bindEvents(elements);
     };
