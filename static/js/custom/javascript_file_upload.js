@@ -9,7 +9,6 @@ var FileUpload = (function() {
     };
 
     var startUpload = function(files, path) {
-        console.log(files)
         var formData = new FormData();
         formData.append("file", files, path+files.name);
         var promise = $.ajax({

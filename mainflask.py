@@ -207,7 +207,6 @@ def allowed_file(filename):
 @application.route('/uploader', methods = ['GET', 'POST'])
 @auth_required()
 def upload_filer():
-
     if request.method == 'POST':
         print(request.files['file'])
         # check if the post request has the file part
