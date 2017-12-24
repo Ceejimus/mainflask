@@ -102,6 +102,9 @@ class AuthDomain():
         session = self.Session()
         user = session.query(User).filter(User.username == username).first()
 
+        if user is None:
+            return None
+
         password_hash = hash_password(string_to_bytes(password), user.salt)
         if (password_hash == user.password_hash):
             token = str(uuid.uuid4())
