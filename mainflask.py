@@ -204,9 +204,10 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
     
-@application.route('/uploader', methods = ['GET', 'POST'])
+@application.route('/uploader/<folder>', methods = ['GET', 'POST'])
 @auth_required()
-def upload_filer():
+def upload_filer(folder):
+    print(folder)
     if request.method == 'POST':
         # check if the post request has the file part
         if 'file' not in request.files:
@@ -219,7 +220,12 @@ def upload_filer():
         if file and allowed_file(file.filename):
             path, filename = os.path.split(file.filename)
             path = os.path.join(application.config['UPLOAD_FOLDER'], path)
-            path = path.replace('/', '\\')
+            if os.sep == '\\':
+                path = path.replace('/', '\\')
+            else:
+                path = path.replace('\\', '/')
+
+            print(path)
             os.makedirs(path, exist_ok = True)
             file.save(os.path.join(path, filename))
             return json.dumps({'success': request.json}), 200, { 'ContentType':'application/json' }
