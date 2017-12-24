@@ -22,8 +22,12 @@ DB = config["db"]
 USER = config["user"]
 PASS = config["pass"]
 
-ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'mp4'])
 application.config['UPLOAD_FOLDER'] = config["upload_folder"]
+ignore_auth = config.get("ignore_auth")
+ignore_auth = False if ignore_auth is None else ignore_auth
+
+ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'mp4'])
+
 
 auth_domain = AuthDomain(HOST, PORT, DB, USER, PASS)
 
@@ -35,6 +39,11 @@ class auth_required(object):
     def __call__(self, f):
         @wraps(f)
         def _fn(*args, **kwargs):
+            if ignore_auth:
+                session['username'] = 'fake-user'
+                session['Atmoscape-Token'] = 'fake-token'
+                return f(*args, **kwargs)
+
             username = None
             token = session.get('Atmoscape-Token')
             userId = None
@@ -54,6 +63,15 @@ class auth_required(object):
 
         return _fn
 
+def maybe_ignore_auth(f):
+    @wraps(f)
+    def _fn(*args, **kwargs):
+        if ignore_auth:
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+
+    return _fn
+
 
 @application.route("/", methods=['GET'])
 @auth_required()
@@ -65,6 +83,7 @@ def index():
 
 
 @application.route("/account/create", methods=['GET'])
+@maybe_ignore_auth
 def get_create_user_form():
     form = CreateUserForm()
     return render_template(
@@ -75,6 +94,7 @@ def get_create_user_form():
 
 
 @application.route("/account/create", methods=['POST'])
+@maybe_ignore_auth
 def create_user():
     form = CreateUserForm()
     if form.validate_on_submit():
@@ -101,6 +121,7 @@ def create_user():
 
 
 @application.route("/login", methods=['GET'])
+@maybe_ignore_auth
 def get_login_form():
     token = session.get('Atmoscape-Token')
     if token is not None:
@@ -117,6 +138,7 @@ def get_login_form():
 
 
 @application.route("/login", methods=['POST'])
+@maybe_ignore_auth
 def login():
     form = LoginForm()
     if form.validate_on_submit():
