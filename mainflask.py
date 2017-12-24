@@ -37,6 +37,7 @@ class auth_required(object):
         def _fn(*args, **kwargs):
             username = None
             token = session.get('Atmoscape-Token')
+            userId = None
             if token is not None:
                 userId = auth_domain.get_user_for_token(token)
 
@@ -182,18 +183,17 @@ def allowed_file(filename):
 
     
 @application.route('/uploader', methods = ['GET', 'POST'])
+@auth_required()
 def upload_filer():
     print("debug")
     if request.method == 'POST':
         # check if the post request has the file part
         if 'file' not in request.files:
-            flash('No file part')
             return render_template('fileupload.html')
         file = request.files['file']
         # if user does not select file, browser also
         # submit a empty part without filename
         if file.filename == '':
-            flash('No selected file')
             return render_template('fileupload.html')
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
@@ -203,5 +203,5 @@ def upload_filer():
     return render_template('fileupload.html')
 
 if __name__ == '__main__':
-    application.run(debug=True)
+    application.run()
 
