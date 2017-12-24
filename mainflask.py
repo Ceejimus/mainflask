@@ -4,7 +4,8 @@ from flask import make_response
 from domain import AuthDomain
 from forms import CreateUserForm, LoginForm
 from functools import wraps
-import jsonimport os
+import json
+import os
 application = Flask(__name__)
 application.static_url_path = "/static"
 application.secret_key = 'AfUHFkB6s&PIVULP3IUgNMjZYA9uN96R'
