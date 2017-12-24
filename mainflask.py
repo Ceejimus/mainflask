@@ -1,28 +1,29 @@
 """entrypoint for flask app."""
+import os
+import json
 from flask import Flask, render_template, redirect, url_for, request, session
 from flask import make_response
 from domain import AuthDomain
 from forms import CreateUserForm, LoginForm
 from functools import wraps
-import json
-import os
+from werkzeug import secure_filename
 application = Flask(__name__)
 application.static_url_path = "/static"
 application.secret_key = 'AfUHFkB6s&PIVULP3IUgNMjZYA9uN96R'
 
 
 with open  ('config.json', 'r') as f:
-    data = json.load(f)
+    config = json.load(f)
+    print("running with config\n", json.dumps(config, indent=4))
 
-HOST = data["host"]
-PORT = int(data["port"])
-DB = data["db"]
-USER = data["user"]
-PASS = data["pass"]
+HOST = config["host"]
+PORT = int(config["port"])
+DB = config["db"]
+USER = config["user"]
+PASS = config["pass"]
 
-UPLOAD_FOLDER = 'C:/Users/ZachJ/Pictures'
 ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'mp4'])
-application.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+application.config['UPLOAD_FOLDER'] = config["upload_folder"]
 
 auth_domain = AuthDomain(HOST, PORT, DB, USER, PASS)
 
@@ -174,6 +175,7 @@ def process_user():
         auth_domain.delete_user(userId)
 
     return json.dumps({'success': request.json}), 200, { 'ContentType':'application/json' }
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -194,6 +196,7 @@ def upload_filer():
             return render_template('fileupload.html')
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
+            print("saving to {}".format(os.path.join(application.config['UPLOAD_FOLDER'], filename)))
             file.save(os.path.join(application.config['UPLOAD_FOLDER'], filename))
             return render_template('fileupload.html')
     return render_template('fileupload.html')

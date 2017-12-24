@@ -4,7 +4,12 @@ Flask-WTF==0.14.2
 itsdangerous==0.24
 Jinja2==2.10
 MarkupSafe==1.0
+migra==1.0.1509328651
+pathlib==1.0.1
 psycopg2==2.7.3.2
+schemainspect==0.1.1509328651
+six==1.11.0
 SQLAlchemy==1.1.15
+sqlbag==0.1.1510721564
 Werkzeug==0.13
 WTForms==2.1
