@@ -100,16 +100,8 @@ class AuthDomain():
 
     def login(self, username, password):
         session = self.Session()
-        users = session.query(User).filter(
-            and_(User.username == username, not_(User.pending))).all()
-        if (len(users) == 0):
-            return None
+        user = session.query(User).filter(User.username == username).first()
 
-        for user in users:
-            print(user.pending)
-            for group in user.groups:
-                print(group.name)
-        user = users[0]
         password_hash = hash_password(string_to_bytes(password), user.salt)
         if (password_hash == user.password_hash):
             token = str(uuid.uuid4())

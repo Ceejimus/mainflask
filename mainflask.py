@@ -11,7 +11,6 @@ application.secret_key = 'AfUHFkB6s&PIVULP3IUgNMjZYA9uN96R'
 
 with open  ('config.json', 'r') as f:
     data = json.load(f)
-    print(data)
 
 HOST = data["host"]
 PORT = int(data["port"])
@@ -27,7 +26,6 @@ class auth_required(object):
         self.group = group
 
     def __call__(self, f):
-        print(self.group)
         @wraps(f)
         def _fn(*args, **kwargs):
             username = None
@@ -40,9 +38,7 @@ class auth_required(object):
             else:
                 user, groups = auth_domain.get_user_by_id(userId)
                 if self.group is not None:
-                    print(self.group)
                     groups = [group.name for group in user.groups]
-                    print(groups)
                     if self.group not in groups:
                         return redirect(url_for('index'))
                 session['username'] = user.username
@@ -122,7 +118,6 @@ def login():
         token = auth_domain.login(username, password)
         if token is not None:
             import sys
-            print(token, file=sys.stderr)
             resp = make_response(redirect(url_for('index')))
             session['Atmoscape-Token'] = token
             return resp
@@ -154,7 +149,6 @@ def admin():
 @application.route("/processuser", methods=['POST'])
 @auth_required("admin")
 def process_user():
-    print(request.json)
     userId = request.json.get('userId')
     groupId = request.json.get('groupId')
     action = request.json.get('action')
