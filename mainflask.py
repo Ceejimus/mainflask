@@ -4,7 +4,9 @@ from flask import make_response
 from domain import AuthDomain
 from forms import CreateUserForm, LoginForm
 from functools import wraps
+from werkzeug import secure_filename
 import json
+import os
 application = Flask(__name__)
 application.static_url_path = "/static"
 application.secret_key = 'AfUHFkB6s&PIVULP3IUgNMjZYA9uN96R'
@@ -19,6 +21,10 @@ PORT = int(data["port"])
 DB = data["db"]
 USER = data["user"]
 PASS = data["pass"]
+
+UPLOAD_FOLDER = 'C:/Users/ZachJ/Pictures'
+ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'mp4'])
+application.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 auth_domain = AuthDomain(HOST, PORT, DB, USER, PASS)
 
@@ -120,5 +126,32 @@ def login():
     )
 
 
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+    
+@application.route('/uploader', methods = ['GET', 'POST'])
+def upload_filer():
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'file' not in request.files:
+            flash('No file part')
+            return render_template('fileupload.html')
+        file = request.files['file']
+        # if user does not select file, browser also
+        # submit a empty part without filename
+        if file.filename == '':
+            flash('No selected file')
+            return render_template('fileupload.html')
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(application.config['UPLOAD_FOLDER'], filename))
+            return render_template('fileupload.html')
+    return render_template('fileupload.html')
+
+
 if __name__ == '__main__':
-    application.run()
+    application.run(debug=True)
+
