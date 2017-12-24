@@ -4,9 +4,7 @@ from flask import make_response
 from domain import AuthDomain
 from forms import CreateUserForm, LoginForm
 from functools import wraps
-from werkzeug import secure_filename
-import json
-import os
+import jsonimport os
 application = Flask(__name__)
 application.static_url_path = "/static"
 application.secret_key = 'AfUHFkB6s&PIVULP3IUgNMjZYA9uN96R'
@@ -29,25 +27,37 @@ application.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 auth_domain = AuthDomain(HOST, PORT, DB, USER, PASS)
 
 
-def login_required(fn):
-    @wraps(fn)
-    def _fn(*args, **kwargs):
-        username = None
-        if ('Atmoscape-Token' in session):
-            token = session['Atmoscape-Token']
-            username = auth_domain.get_user_for_token(token)
+class auth_required(object):
+    def __init__(self, group=None):
+        self.group = group
 
-        if (username is None):
-            return redirect(url_for('get_login_form'))
-        else:
-            session['username'] = username
-            return fn(*args, **kwargs)
+    def __call__(self, f):
+        print(self.group)
+        @wraps(f)
+        def _fn(*args, **kwargs):
+            username = None
+            token = session.get('Atmoscape-Token')
+            if token is not None:
+                userId = auth_domain.get_user_for_token(token)
 
-    return _fn
+            if userId is None:
+                return redirect(url_for('get_login_form'))
+            else:
+                user, groups = auth_domain.get_user_by_id(userId)
+                if self.group is not None:
+                    print(self.group)
+                    groups = [group.name for group in user.groups]
+                    print(groups)
+                    if self.group not in groups:
+                        return redirect(url_for('index'))
+                session['username'] = user.username
+                return f(*args, **kwargs)
+
+        return _fn
 
 
 @application.route("/", methods=['GET'])
-@login_required
+@auth_required()
 def index():
     return render_template(
         "home.html",
@@ -93,6 +103,12 @@ def create_user():
 
 @application.route("/login", methods=['GET'])
 def get_login_form():
+    token = session.get('Atmoscape-Token')
+    if token is not None:
+        userId = auth_domain.get_user_for_token(token)
+        if userId is not None:
+            return redirect(url_for('index'))
+
     form = LoginForm()
     return render_template(
         "login.html",
@@ -106,7 +122,6 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         import sys
-        print("debug", file=sys.stderr)
         username = form.username.data
         password = form.password.data
         token = auth_domain.login(username, password)
@@ -125,8 +140,45 @@ def login():
         form=form
     )
 
+@application.route('/logout', methods=['GET'])
+@auth_required()
+def logout():
+    session.pop('Atmoscape-Token')
+    return redirect(url_for('get_login_form'))
 
+@application.route("/admin", methods=['GET'])
+@auth_required("admin")
+def admin():
+    return render_template(
+        "admin.html",
+        title="Admin",
+        pending_users=auth_domain.get_pending_users(),
+        groups=auth_domain.get_groups()
+    )
 
+@application.route("/processuser", methods=['POST'])
+@auth_required("admin")
+def process_user():
+    print(request.json)
+    userId = request.json.get('userId')
+    groupId = request.json.get('groupId')
+    action = request.json.get('action')
+
+    if userId is None or userId == '':
+        return json.dumps({'success': False}), 400, { 'ContentType':'application/json' }
+
+    if action is None or action == '':
+        return json.dumps({'success': False}), 400, { 'ContentType':'application/json' }
+
+    if action == 'accept' and (groupId is None or groupId == ''):
+        return json.dumps({'success': False}), 400, { 'ContentType':'application/json' }
+
+    if action == 'accept':
+        auth_domain.accept_user(userId, groupId)
+    else:
+        auth_domain.delete_user(userId)
+
+    return json.dumps({'success': request.json}), 200, { 'ContentType':'application/json' }
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -150,7 +202,6 @@ def upload_filer():
             file.save(os.path.join(application.config['UPLOAD_FOLDER'], filename))
             return render_template('fileupload.html')
     return render_template('fileupload.html')
-
 
 if __name__ == '__main__':
     application.run(debug=True)

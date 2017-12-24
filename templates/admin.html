@@ -1,0 +1,58 @@
+{% extends "navbar.html" %}
+
+{% block page_scripts %}
+    <script type="text/javascript" src="{{ url_for('static', filename='js/custom/admin.js') }}"></script>
+
+    <script>
+        $(document).ready(function() {
+            var urls = {
+                "ProcessUser": "{{ url_for('process_user') }}"
+            };
+            Admin.Init(urls);
+        });
+    </script>
+
+{% endblock %}
+
+{% block navbar %}
+<div id="pending-users">
+    <h4>Pending Users</h4>
+    <div class="row">
+        <div class="col-sm-3">
+            <label>Username</label>
+        </div>
+        <div class="col-sm-4">
+            <label>Email</label>
+        </div>
+        <div class="col-sm-3">
+            <label>Groups</label>
+        </div>
+        <div class="col-sm-2">
+        </div>
+    </div>
+    {% for pending_user in pending_users %}
+        <div class="row pending-user" data-id="{{ pending_user.id }}">
+            <div class="col-sm-3">
+                {{ pending_user.username }}
+            </div>
+            <div class="col-sm-4">
+                {{ pending_user.email }}
+            </div>
+            <div class="col-sm-3">
+                <select class="group-select">
+                    <option value="">Select Group</option>
+                    {% for group in groups %}
+                        <option value="{{ group.id }}">{{ group.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-sm-1">
+                <button type="button" class="btn btn-primary accept-btn">Accept</button>
+            </div>
+            <div class="col-sm-1">
+                <button type="button" class="btn btn-danger reject-btn">Reject</button>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
