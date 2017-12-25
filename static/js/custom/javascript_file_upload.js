@@ -1,16 +1,18 @@
 var FileUpload = (function() {
     'use strict';
 
+    var Urls = {}
+
     var getElements = function() {
         return {
             DropZone: $("#drop-zone"),
-            UploadForm: $("#js-upload-form")
+            FoldersSelect: $("#folder-select")
         };
     };
 
-    var startUpload = function(files, path) {
+    var startUpload = function(file, path, folder) {
         var formData = new FormData();
-        formData.append("file", files, path+files.name);
+        formData.append("file", file, path+file.name);
         var promise = $.ajax({
             xhr : function() {
             var xhr = new window.XMLHttpRequest();
@@ -33,7 +35,7 @@ var FileUpload = (function() {
 
              return xhr;
             },
-            url: "/uploader",
+            url: Urls.UploadFile.replace('__REPLACE__', folder),
             method: "post",
             processData: false,
             contentType: false,
@@ -48,48 +50,49 @@ var FileUpload = (function() {
         
     };
 
-    var traverseFileTree = function(item, path) {
+    var traverseFileTree = function(item, callback, path=null) {
       path = path || "";
       if (item.isFile) {
         // Get file
         item.file(function(file) {
           console.log("File:", path + file.name);
-          startUpload(file, path);
+          callback(file, path);
         });
       } else if (item.isDirectory) {
         // Get folder contents
         var dirReader = item.createReader();
         dirReader.readEntries(function(entries) {
           for (var i=0; i<entries.length; i++) {
-            traverseFileTree(entries[i], path + item.name + "/");
+            traverseFileTree(entries[i], callback, path + item.name + "/");
           }
         });
       }
     };
 
     var bindEvents = function(elements) {
-        elements.UploadForm.on('submit', function(e) {
-            console.log("debug2")
-            e.preventDefault();
-            var files = e.originalEvent.dataTransfer.files;
-            startUpload(files)
-        })
-
         elements.DropZone.on('drop', function(e) {
-            e.stopPropagation();
-            e.preventDefault();
-            console.log(e)
+
+            console.log(elements);
+            var folder = elements.FoldersSelect.val();
+
+            var uploadFunc = function(item, path) {
+                return startUpload(item, path, folder);
+            };
+
             $(this).addClass('upload-drop-zone');
-            console.log("debug3")
-            // startUpload(e.originalEvent.dataTransfer.files);
+
             var items = e.originalEvent.dataTransfer.items;
-              for (var i=0; i<items.length; i++) {
+            for (var i=0; i<items.length; i++) {
                 // webkitGetAsEntry is where the magic happens
                 var item = items[i].webkitGetAsEntry();
                 if (item) {
-                  traverseFileTree(item);
+                    traverseFileTree(item, uploadFunc);
                 }
-              }
+            }
+
+            e.stopPropagation();
+            e.preventDefault();
+            
         }).on('dragover', function(e) {
             $(this).addClass('drop');
             return false;
@@ -99,9 +102,14 @@ var FileUpload = (function() {
         });
     };
 
-    var init = function() {
-        console.log("debug1")
+    var init = function(urls) {
+        Urls = urls;
         var elements = getElements();
+
+        elements.FoldersSelect.selectize({
+            create: false
+        });
+
         bindEvents(elements);
     };
 

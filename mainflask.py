@@ -3,13 +3,18 @@ import os
 import json
 from flask import Flask, render_template, redirect, url_for, request, session
 from flask import make_response
+import jinja2
 from domain import AuthDomain
 from forms import CreateUserForm, LoginForm
 from functools import wraps
 from werkzeug import secure_filename
+
 application = Flask(__name__)
 application.static_url_path = "/static"
 application.secret_key = 'AfUHFkB6s&PIVULP3IUgNMjZYA9uN96R'
+
+env = jinja2.Environment()
+env.filters['tojson'] = json.dumps
 
 
 with open  ('config.json', 'r') as f:
@@ -22,7 +27,7 @@ DB = config["db"]
 USER = config["user"]
 PASS = config["pass"]
 
-application.config['UPLOAD_FOLDER'] = config["upload_folder"]
+application.config['upload_folders'] = config["upload_folders"]
 ignore_auth = config.get("ignore_auth")
 ignore_auth = False if ignore_auth is None else ignore_auth
 
@@ -203,31 +208,34 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-    
-@application.route('/uploader', methods = ['GET', 'POST'])
+@application.route('/uploader', methods=['GET'])
 @auth_required()
-def upload_filer():
-    if request.method == 'POST':
-        print(request.files['file'])
-        # check if the post request has the file part
-        #print(request.files['file'])
-        if 'file' not in request.files:
-            print("debug1")
-            return json.dumps({'success': request.json}), 200, { 'ContentType':'application/json' }
-        file = request.files['file']
-        # if user does not select file, browser also
-        # submit a empty part without filename
-        if file.filename == '':
-            print("debug2")
-            return json.dumps({'success': request.json}), 200, { 'ContentType':'application/json' }
-        if file and allowed_file(file.filename):
-            print("debug3")
-            filename = secure_filename(file.filename)
-            print("saving to {}".format(os.path.join(application.config['UPLOAD_FOLDER'], filename)))
-            file.save(os.path.join(application.config['UPLOAD_FOLDER'], filename))
-            return json.dumps({'success': request.json}), 200, { 'ContentType':'application/json' }
-    print("debug4")
-    return render_template('fileupload.html')
+def uploader():
+    print(json.dumps(application.config["upload_folders"]))
+    return render_template('fileupload.html', folders=application.config["upload_folders"].keys())
+
+@application.route('/upload/<folder>', methods=['POST'])
+@auth_required()
+def upload_file(folder):
+    print(request.files['file'])
+    # check if the post request has the file part
+    #print(request.files['file'])
+    if 'file' not in request.files:
+        print("debug1")
+        return json.dumps({'success': request.json}), 200, { 'ContentType':'application/json' }
+    file = request.files['file']
+    # if user does not select file, browser also
+    # submit a empty part without filename
+    if file.filename == '':
+        print("debug2")
+        return json.dumps({'success': request.json}), 200, { 'ContentType':'application/json' }
+    if file and allowed_file(file.filename):
+        print("debug3")
+        filename = secure_filename(file.filename)
+        print("saving to {}".format(os.path.join(application.config['upload_folders'][folder], filename)))
+        # file.save(os.path.join(application.config['UPLOAD_FOLDER'], filename))
+        return json.dumps({'success': request.json}), 200, { 'ContentType':'application/json' }
+
 
 if __name__ == '__main__':
     application.run()
