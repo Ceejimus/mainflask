@@ -31,7 +31,7 @@ application.config['upload_folders'] = config["upload_folders"]
 ignore_auth = config.get("ignore_auth")
 ignore_auth = False if ignore_auth is None else ignore_auth
 
-ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'mp4'])
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif', 'mp4', 'mkv', 'avi', 'srt', 'vtt' 'mp3', 'nfo'])
 
 
 auth_domain = AuthDomain(HOST, PORT, DB, USER, PASS)
@@ -208,6 +208,31 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def secure_path(path):
+    parts = path.split(os.sep)
+
+    print('[DEBUG]', 10, parts)
+
+    secure_parts = [
+       secure_part
+       for secure_part
+       in [
+           part.replace('..', '')
+           for part
+           in parts
+       ] if secure_part is not ''
+    ]
+
+    print('[DEBUG]', 8, secure_parts)
+
+    fullpath = ""
+
+    for secure_part in secure_parts:
+        fullpath = os.path.join(fullpath, secure_part)
+
+    return fullpath
+
+
 @application.route('/uploader', methods=['GET'])
 @auth_required()
 def uploader():
@@ -217,24 +242,47 @@ def uploader():
 @application.route('/upload/<folder>', methods=['POST'])
 @auth_required()
 def upload_file(folder):
-    print(request.files['file'])
+    print('[DEBUG]', 1)
     # check if the post request has the file part
     #print(request.files['file'])
-    if 'file' not in request.files:
-        print("debug1")
-        return json.dumps({'success': request.json}), 200, { 'ContentType':'application/json' }
-    file = request.files['file']
+    file = request.files.get('file')
+    if file is None or file.name == '' or not allowed_file(file.filename):
+        print('[DEBUG]', 2, 'bad', "" if file is None else file.filename)
+        return json.dumps({'success': False}), 400, { 'ContentType':'application/json' }
+    # file = request.files['file']
     # if user does not select file, browser also
     # submit a empty part without filename
-    if file.filename == '':
-        print("debug2")
-        return json.dumps({'success': request.json}), 200, { 'ContentType':'application/json' }
-    if file and allowed_file(file.filename):
-        print("debug3")
-        filename = secure_filename(file.filename)
-        print("saving to {}".format(os.path.join(application.config['upload_folders'][folder], filename)))
-        # file.save(os.path.join(application.config['UPLOAD_FOLDER'], filename))
-        return json.dumps({'success': request.json}), 200, { 'ContentType':'application/json' }
+    path, filename = os.path.split(file.filename)
+    print('[DEBUG]', 5, path)
+
+    if os.sep == '\\':
+        path = path.replace('/', '\\')
+    else:
+        path = path.replace('\\', '/')
+
+    print('[DEBUG]', 6, path)
+
+
+    print('[DEBUG]', 7, path, filename)
+
+    secured_path = secure_path(path)
+
+    print('[DEBUG]', 9, secured_path)
+
+    fullpath = os.path.join(application.config['upload_folders'][folder], secured_path)
+
+    print('[DEBUG]', 11, fullpath)
+
+    os.makedirs(fullpath, exist_ok=True)
+
+    # filepath = os.path.join(fullpath, secure_filename(filename))
+    filepath = os.path.join(fullpath, filename)
+
+    # filepath = secure_path(filepath)
+
+    print("saving to {}".format(filepath))
+    file.save(filepath)
+    return json.dumps({'success': request.json}), 200, { 'ContentType':'application/json' }
 
 
 if __name__ == '__main__':
