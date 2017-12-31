@@ -28,6 +28,7 @@ USER = config["user"]
 PASS = config["pass"]
 
 application.config['upload_folders'] = config["upload_folders"]
+application.config['default_folder'] = config.get("default_folder")
 ignore_auth = config.get("ignore_auth")
 ignore_auth = False if ignore_auth is None else ignore_auth
 
@@ -237,7 +238,10 @@ def secure_path(path):
 @auth_required()
 def uploader():
     print(json.dumps(application.config["upload_folders"]))
-    return render_template('fileupload.html', folders=application.config["upload_folders"].keys())
+    return render_template('fileupload.html',
+        folders=application.config["upload_folders"].keys(),
+        default_folder=application.config["default_folder"]
+    )
 
 @application.route('/upload/<folder>', methods=['POST'])
 @auth_required()
@@ -246,6 +250,7 @@ def upload_file(folder):
     # check if the post request has the file part
     #print(request.files['file'])
     file = request.files.get('file')
+    print('[DEBUG]', 'after get')
     if file is None or file.name == '' or not allowed_file(file.filename):
         print('[DEBUG]', 2, 'bad', "" if file is None else file.filename)
         return json.dumps({'success': False}), 400, { 'ContentType':'application/json' }
@@ -261,7 +266,6 @@ def upload_file(folder):
         path = path.replace('\\', '/')
 
     print('[DEBUG]', 6, path)
-
 
     print('[DEBUG]', 7, path, filename)
 

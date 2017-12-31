@@ -30,7 +30,11 @@
           &nbsp;
           <select id=folder-select style="width: 175px;">
             {% for folder in folders %}
-              <option val="{{ folder }}">{{ folder }}</option>
+              {% if default_folder is not none and folder == default_folder %}
+                <option val="{{ folder }}" selected="selected">{{ folder }}</option>
+              {% else %}
+                <option val="{{ folder }}">{{ folder }}</option>
+              {% endif %}
             {% endfor %}
           </select>
         </div>
