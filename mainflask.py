@@ -8,14 +8,12 @@ from domain import AuthDomain
 from forms import CreateUserForm, LoginForm
 from functools import wraps
 from werkzeug import secure_filename
-
-application = Flask(__name__)
-application.static_url_path = "/static"
-application.secret_key = 'AfUHFkB6s&PIVULP3IUgNMjZYA9uN96R'
+from file_streamer import FileStreamer
+from werkzeug.serving import is_running_from_reloader
+import atexit
 
 env = jinja2.Environment()
 env.filters['tojson'] = json.dumps
-
 
 with open  ('config.json', 'r') as f:
     config = json.load(f)
@@ -27,16 +25,30 @@ DB = config["db"]
 USER = config["user"]
 PASS = config["pass"]
 
-application.config['upload_folders'] = config["upload_folders"]
-application.config['default_folder'] = config.get("default_folder")
-ignore_auth = config.get("ignore_auth")
-ignore_auth = False if ignore_auth is None else ignore_auth
-
-ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif', 'mp4', 'mkv', 'avi', 'srt', 'vtt' 'mp3', 'nfo'])
-
-
 auth_domain = AuthDomain(HOST, PORT, DB, USER, PASS)
+tmp_dir = config.get('tmp_dir')
 
+# fileStreamer = FileStreamer(tmp_dir)
+# fileStreamer.start()
+
+def create_app(config):
+    import sys
+
+    application = Flask(__name__)
+
+    application.static_url_path = "/static"
+    application.secret_key = 'AfUHFkB6s&PIVULP3IUgNMjZYA9uN96R'
+
+    application.config['upload_folders'] = config["upload_folders"]
+    application.config['default_folder'] = config.get("default_folder")
+    application.config['allowed-ext'] = set(['png', 'jpg', 'jpeg', 'gif', 'mp4', 'mkv', 'avi', 'srt', 'vtt' 'mp3', 'nfo'])
+
+    ignore_auth = config.get("ignore_auth")
+    application.config['ignore_auth'] = False if ignore_auth is None else ignore_auth
+
+    return application
+
+application = create_app(config)
 
 class auth_required(object):
     def __init__(self, group=None):
@@ -45,7 +57,7 @@ class auth_required(object):
     def __call__(self, f):
         @wraps(f)
         def _fn(*args, **kwargs):
-            if ignore_auth:
+            if application.config.get('ignore_auth'):
                 session['username'] = 'fake-user'
                 session['Atmoscape-Token'] = 'fake-token'
                 return f(*args, **kwargs)
@@ -72,7 +84,7 @@ class auth_required(object):
 def maybe_ignore_auth(f):
     @wraps(f)
     def _fn(*args, **kwargs):
-        if ignore_auth:
+        if application.config.get('ignore_auth'):
             return redirect(url_for('index'))
         return f(*args, **kwargs)
 
@@ -207,7 +219,7 @@ def process_user():
 
 def allowed_file(filename):
     return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+           filename.rsplit('.', 1)[1].lower() in application.config.get('allowed-ext')
 
 def secure_path(path):
     parts = path.split(os.sep)
@@ -237,15 +249,67 @@ def secure_path(path):
 @application.route('/uploader', methods=['GET'])
 @auth_required()
 def uploader():
-    print(json.dumps(application.config["upload_folders"]))
     return render_template('fileupload.html',
         folders=application.config["upload_folders"].keys(),
         default_folder=application.config["default_folder"]
     )
 
-@application.route('/upload/<folder>', methods=['POST'])
+@application.route('/initDirUpload', methods=['POST'])
 @auth_required()
-def upload_file(folder):
+def init_dir_upload():
+    folder = request.json.get('folder')
+    name = request.json.get('name')
+    dir = os.path.join(application.config['upload_folders'][folder], secure_path(name))
+    dir_id = fileStreamer.init_dir_upload(dir)
+    return json.dumps({'dir_id': dir_id}), 200, { 'ContentType':'application/json' }
+
+
+@application.route('/initFileUpload', methods=['POST'])
+@auth_required()
+def init_file_upload():
+    dir_id = request.json.get('dir_id')
+    path = request.json.get('path')
+    size = request.json.get('size')
+    path, ext = os.path.splitext(path)
+    print('init_file_upload flask', dir_id, path, ext, size)
+    if ext.replace('.', '') not in application.config['allowed-ext']:
+        return json.dumps({'message': ext + ' not allowed'}), 400, { 'ContentType':'application/json' }
+    print('[DEBUG]')
+    file_id = fileStreamer.init_file_upload(dir_id, path, size)
+    return json.dumps({'file_id': file_id}), 200, { 'ContentType':'application/json' }
+
+
+@application.route('/uploadChunk', methods=['POST'])
+@auth_required()
+def upload_chunk():
+    dir_id = request.json.get('dir_id')
+    file_id = request.json.get('file_id')
+    payload = request.json.get('payload');
+    fileStreamer.write_chunk(dir_id, file_id, payload.encode('utf-8'))
+    return json.dumps({'success': 'success'}), 200, { 'ContentType':'application/json' }
+
+
+@application.route('/finalizeFileUpload', methods=['POST'])
+@auth_required()
+def finalize_file_upload():
+    dir_id = request.json.get('dir_id')
+    file_id = request.json.get('file_id')
+    fileStreamer.finalize_file_upload(dir_id, file_id)
+    return json.dumps({'success': request.json}), 200, { 'ContentType':'application/json' }
+
+
+@application.route('/upload/', methods=['POST'])
+@auth_required()
+def upload_file():
+    uploadId = request.json.get('uploadId');
+    start = request.json.get('start');
+    chunkSize = request.json.get('chunkSize');
+    payload = request.json.get('payload');
+    return json.dumps({'success': request.json}), 200, { 'ContentType':'application/json' }
+
+@application.route('/oldUpload/<folder>', methods=['POST'])
+@auth_required()
+def old_upload(folder):
     print('[DEBUG]', 1)
     # check if the post request has the file part
     #print(request.files['file'])
@@ -291,5 +355,7 @@ def upload_file(folder):
 
 if __name__ == '__main__':
     application.run()
-
-
+    print('stopping')
+    if fileStreamer:
+        print('stopping file streamer')
+        fileStreamer.stop()
