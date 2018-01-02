@@ -11,12 +11,7 @@
       <script>
           $(document).ready(function() {
             var urls = {
-                "OldUpload": "{{ url_for('old_upload', folder='__FOLDER__') }}",
-                "UploadFile": "{{ url_for('upload_file') }}",
-                "InitDirUpload": "{{ url_for('init_dir_upload') }}",
-                "InitFileUpload": "{{ url_for('init_file_upload') }}",
-                "UploadChunk": "{{ url_for('upload_chunk') }}",
-                "FinalizeFileUpload": "{{ url_for('finalize_file_upload') }}",
+                "UploadFile": "{{ url_for('upload_file', folder='__FOLDER__') }}"
             };
 
             FileUpload.Init(urls);

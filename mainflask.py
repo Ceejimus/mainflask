@@ -8,9 +8,6 @@ from domain import AuthDomain
 from forms import CreateUserForm, LoginForm
 from functools import wraps
 from werkzeug import secure_filename
-from file_streamer import FileStreamer
-from werkzeug.serving import is_running_from_reloader
-import atexit
 
 env = jinja2.Environment()
 env.filters['tojson'] = json.dumps
@@ -27,9 +24,6 @@ PASS = config["pass"]
 
 auth_domain = AuthDomain(HOST, PORT, DB, USER, PASS)
 tmp_dir = config.get('tmp_dir')
-
-# fileStreamer = FileStreamer(tmp_dir)
-# fileStreamer.start()
 
 def create_app(config):
     import sys
@@ -254,62 +248,10 @@ def uploader():
         default_folder=application.config["default_folder"]
     )
 
-@application.route('/initDirUpload', methods=['POST'])
+
+@application.route('/upload_file/<folder>', methods=['POST'])
 @auth_required()
-def init_dir_upload():
-    folder = request.json.get('folder')
-    name = request.json.get('name')
-    dir = os.path.join(application.config['upload_folders'][folder], secure_path(name))
-    dir_id = fileStreamer.init_dir_upload(dir)
-    return json.dumps({'dir_id': dir_id}), 200, { 'ContentType':'application/json' }
-
-
-@application.route('/initFileUpload', methods=['POST'])
-@auth_required()
-def init_file_upload():
-    dir_id = request.json.get('dir_id')
-    path = request.json.get('path')
-    size = request.json.get('size')
-    path, ext = os.path.splitext(path)
-    print('init_file_upload flask', dir_id, path, ext, size)
-    if ext.replace('.', '') not in application.config['allowed-ext']:
-        return json.dumps({'message': ext + ' not allowed'}), 400, { 'ContentType':'application/json' }
-    print('[DEBUG]')
-    file_id = fileStreamer.init_file_upload(dir_id, path, size)
-    return json.dumps({'file_id': file_id}), 200, { 'ContentType':'application/json' }
-
-
-@application.route('/uploadChunk', methods=['POST'])
-@auth_required()
-def upload_chunk():
-    dir_id = request.json.get('dir_id')
-    file_id = request.json.get('file_id')
-    payload = request.json.get('payload');
-    fileStreamer.write_chunk(dir_id, file_id, payload.encode('utf-8'))
-    return json.dumps({'success': 'success'}), 200, { 'ContentType':'application/json' }
-
-
-@application.route('/finalizeFileUpload', methods=['POST'])
-@auth_required()
-def finalize_file_upload():
-    dir_id = request.json.get('dir_id')
-    file_id = request.json.get('file_id')
-    fileStreamer.finalize_file_upload(dir_id, file_id)
-    return json.dumps({'success': request.json}), 200, { 'ContentType':'application/json' }
-
-
-@application.route('/upload/', methods=['POST'])
-@auth_required()
-def upload_file():
-    uploadId = request.json.get('uploadId');
-    start = request.json.get('start');
-    chunkSize = request.json.get('chunkSize');
-    payload = request.json.get('payload');
-    return json.dumps({'success': request.json}), 200, { 'ContentType':'application/json' }
-
-@application.route('/oldUpload/<folder>', methods=['POST'])
-@auth_required()
-def old_upload(folder):
+def upload_file(folder):
     print('[DEBUG]', 1)
     # check if the post request has the file part
     #print(request.files['file'])
@@ -355,7 +297,3 @@ def old_upload(folder):
 
 if __name__ == '__main__':
     application.run()
-    print('stopping')
-    if fileStreamer:
-        print('stopping file streamer')
-        fileStreamer.stop()
