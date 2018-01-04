@@ -1,9 +1,11 @@
 """Defines the admin blueprint"""
+import os
 from flask import current_app as application
 from flask import Blueprint
-from flask import render_template, json
+from flask import render_template, json, request
 from page_wrappers import auth_required
 from helpers import json_response
+from werkzeug import secure_filename
 
 uploader_bp = Blueprint('uploader', __name__, template_folder='templates/uploader')
 
