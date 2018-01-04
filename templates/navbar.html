@@ -10,8 +10,8 @@
         <li {%- if request.path == "/" %} class="active"{% endif %}><a href="/">Home</a></li>
         <li {%- if request.path == "/uploader" %} class="active"{% endif %}><a href="/uploader">File Upload</a></li>
         <li {%- if request.path == "/home" %} class="active"{% endif %}><a href="#">Page 2</a></li>
-        <li {%- if request.path == "/admin" %} class="active"{% endif %}><a href="{{ url_for('admin') }}">Admin</a></li>
-        <li><a href="{{ url_for('logout') }}">Logout</a></li>
+        <li {%- if request.path == "/admin" %} class="active"{% endif %}><a href="{{ url_for('admin.admin') }}">Admin</a></li>
+        <li><a href="{{ url_for('accounts.logout') }}">Logout</a></li>
         </ul>
     </div>
 </nav>

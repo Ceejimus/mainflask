@@ -159,10 +159,9 @@ class AuthDomain():
             return self.tokens[token]['userId']
 
 usergroup = Table('usergroup', Base.metadata,
-      Column('userid', Integer, ForeignKey('user.id')),
-      Column('groupid', String, ForeignKey('group.id'))
-  )
-
+    Column('userid', Integer, ForeignKey('user.id')),
+    Column('groupid', String, ForeignKey('group.id'))
+)
 
 class User(Base):
     __tablename__ = 'user'
