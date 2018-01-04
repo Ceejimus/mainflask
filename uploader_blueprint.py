@@ -6,6 +6,7 @@ from flask import render_template, json, request
 from page_wrappers import auth_required
 from helpers import json_response
 from werkzeug import secure_filename
+from helpers import eprint
 
 uploader_bp = Blueprint('uploader', __name__, template_folder='templates/uploader')
 
@@ -66,7 +67,7 @@ def upload_file(folder):
 
     secured_path = secure_path(path)
 
-    fullpath = os.path.join(application.config['upload_folders'][folder], secured_path)
+    fullpath = os.path.join(application.config['tmp_dir'], secured_path)
 
     os.makedirs(fullpath, exist_ok=True)
 
