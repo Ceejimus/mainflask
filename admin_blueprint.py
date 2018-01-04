@@ -1,7 +1,7 @@
 """Defines the admin blueprint"""
 from flask import current_app as application
 from flask import Blueprint
-from flask import render_template, json
+from flask import render_template, json, request
 from page_wrappers import auth_required
 
 admin_bp = Blueprint('admin', __name__, template_folder='templates/admin')
@@ -33,8 +33,8 @@ def process_user():
         return json.dumps({'success': False}), 400, { 'ContentType':'application/json' }
 
     if action == 'accept':
-        auth_domain.accept_user(userId, groupId)
+        application.config['auth_domain'].accept_user(userId, groupId)
     else:
-        auth_domain.delete_user(userId)
+        application.config['auth_domain'].delete_user(userId)
 
     return json.dumps({'success': request.json}), 200, { 'ContentType':'application/json' }

@@ -3,7 +3,7 @@ from page_wrappers import maybe_ignore_auth
 from flask import current_app as application
 from flask import Blueprint
 from flask import session, render_template, make_response, redirect, url_for
-from forms import LoginForm
+from forms import LoginForm, CreateUserForm
 
 accounts_bp = Blueprint('accounts', __name__, template_folder='templates/accounts')
 
