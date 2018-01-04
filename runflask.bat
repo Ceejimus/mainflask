@@ -1,3 +1,3 @@
 set FLASK_APP=mainflask.py
-set FLASK_DEBUG=0
+set FLASK_DEBUG=1
 flask run

@@ -13,7 +13,7 @@ var FileUpload = (function() {
 
     var startUpload = function(file, path, folder, onComplete) {
         var formData = new FormData();
-        formData.append("file", file, path + file.name);
+        formData.append("file", file, path);
         var promise = $.ajax({
             xhr : function() {
             var xhr = new window.XMLHttpRequest();

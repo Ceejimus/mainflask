@@ -11,7 +11,7 @@
       <script>
           $(document).ready(function() {
             var urls = {
-                "UploadFile": "{{ url_for('upload_file', folder='__FOLDER__') }}"
+                "UploadFile": "{{ url_for('uploader.upload_file', folder='__FOLDER__') }}"
             };
 
             FileUpload.Init(urls);
