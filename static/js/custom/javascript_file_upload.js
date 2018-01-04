@@ -11,6 +11,7 @@ var FileUpload = (function() {
     };
 
     var startUpload = function(file, path, folder) {
+        createList(file.name);
         var formData = new FormData();
         formData.append("file", file, path+file.name);
         var promise = $.ajax({
@@ -26,8 +27,8 @@ var FileUpload = (function() {
                     console.log('Percentage Uploaded: ' + (e.loaded / e.total))
 
                     var percent = Math.floor((e.loaded / e.total) * 100);
-
-                    $('#progressBar').attr('aria-valuenow', percent).css('width', percent + '%').text(percent + '%');
+                    document.getElementById(file.name).childNodes[0].style.width = percent*94.565/100 + '%';
+                    document.getElementById(file.name).childNodes[1].innerHTML = percent + '%';
 
                 }
 
@@ -41,14 +42,51 @@ var FileUpload = (function() {
             contentType: false,
             data: formData,
             success: function(data) {
+                    document.getElementById(file.name).childNodes[0].setAttribute('class', 'progress-bar progressBarC');
+                    document.getElementById(file.name).childNodes[1].setAttribute('class', 'progress-bar statusBarC');
+                    document.getElementById(file.name).childNodes[1].innerHTML = "Success!";
                     console.log(data);
                 },
             error: function(data) {
+                    document.getElementById(file.name).childNodes[1].innerHTML = "Failure";
                     console.log(data);
             }
         });
         
     };
+
+    var createList = function(filename) {
+        var progDiv = document.createElement('div');
+        progDiv.setAttribute('id', filename);
+        progDiv.setAttribute('class', 'progress progressDivC');
+        var progBar = document.createElement('div');
+        progBar.setAttribute('class', 'progress-bar progress-bar-striped active progressBarC');
+        progBar.setAttribute('aria-valuenow', '0');
+        progBar.setAttribute('aria-valuemax', '100');
+        progBar.setAttribute('role', 'progressbar');
+        var progBarPara = document.createElement('p');
+        progBarPara.innerHTML = filename;
+        progBarPara.style.paddingLeft = '25px';
+        progBar.appendChild(progBarPara);
+        //progBar.innerHTML = filename;
+        var statBar = document.createElement('div');
+        statBar.setAttribute('class', 'progress-bar progress-bar-striped active statusBarC');
+        statBar.setAttribute('role', 'progressbar');
+        statBar.innerHTML = 'Queued';
+        progDiv.appendChild(progBar);
+        progDiv.appendChild(statBar);
+        $("#list").append(progDiv);
+        /*var newAnchor = document.createElement('anchor');
+        newAnchor.setAttribute('class', 'list-group-item list-group-item-success');
+        newAnchor.innerHTML = filename;
+        var newSpan = document.createElement('span');
+        newSpan.setAttribute('class', 'badge alert-success pull-left');
+        newSpan.setAttribute('id', filename);
+        newSpan.innerHTML = 'Queued';
+        newAnchor.appendChild(newSpan);
+        $("#list").append(newAnchor);
+        console.log(document.getElementById(filename));*/
+    }
 
     var traverseFileTree = function(item, callback, path=null) {
       path = path || "";

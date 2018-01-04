@@ -13,7 +13,31 @@
   line-height: 200px;
   text-align: center
 }
+
 .upload-drop-zone.drop {
   color: #222;
   border-color: #222;
+}
+
+.progressDivC{
+  height:40px;
+  background-color: #000000;
+}
+
+.progressBarC{
+  height:40px;
+  text-align: left;
+  line-height: 40px;
+  font-size: 18px;
+  background-color: #F9BE03;
+  width: 0%;
+}
+
+.statusBarC{
+  float: right;
+  height:40px;
+  text-align: center;
+  line-height: 40px;
+  width: 60px;
+  background-color: #F9BE03;
 }
