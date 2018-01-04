@@ -4,6 +4,7 @@ from flask import Blueprint
 from flask import render_template, json
 from page_wrappers import auth_required
 from helpers import json_response
+from werkzeug import secure_filename
 
 uploader_bp = Blueprint('uploader', __name__, template_folder='templates/uploader')
 
