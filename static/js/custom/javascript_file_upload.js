@@ -111,8 +111,7 @@ var FileUpload = (function() {
             if (diff !== true) {
                 clearInterval(UploadStatus[path]['intervalId']);
                 var filesToUpload = UploadStatus[path]['files'].slice();
-                console.log(fileToUpload);
-                uploadFiles(folder, fileToUpload);
+                uploadFiles(folder, filesToUpload);
             };
 
             lastList = currentList;
