@@ -1,6 +1,10 @@
 # config files
 config.json
 
+# log files
+# *.log
+# *.log\.*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
