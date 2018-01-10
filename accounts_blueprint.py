@@ -48,9 +48,7 @@ def create_user():
 @accounts_bp.route("/login", methods=['GET'])
 @maybe_ignore_auth
 def get_login_form():
-    application.logger.info('TEST LOGIN LOGGING')
     token = session.get('Atmoscape-Token')
-    application.logger.info(token)
     if token is not None:
         userId = application.config['auth_domain'].get_user_for_token(token)
         if userId is not None:
