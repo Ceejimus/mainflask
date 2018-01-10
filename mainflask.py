@@ -4,7 +4,7 @@ import json
 from flask import Flask, render_template, request, session
 from flask import make_response
 from domain import AuthDomain
-from page_wrappers import auth_required, maybe_ignore_auth
+from auth_tools import auth_required, maybe_ignore_auth
 
 
 with open('config.json', 'r') as f:
@@ -69,7 +69,7 @@ application = create_app(config)
 def index():
     return render_template(
         "home.html",
-        username=session['username']
+        username=session['info']['username']
     )
 
 

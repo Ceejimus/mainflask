@@ -1,7 +1,18 @@
 """Useful decorators for views."""
+import time
 from flask import current_app as application
 from flask import session, redirect, url_for
 from functools import wraps
+
+
+def session_expired(session_info):
+    millis = int(round(time.time()) * 1000)
+    if (session_info['exp'] < millis):
+        return True
+
+    session_info['exp'] = millis + (12 * 60 * 60 * 1000)
+    return False
+
 
 class auth_required(object):
     def __init__(self, group=None):
@@ -13,29 +24,23 @@ class auth_required(object):
             application.logger.info('calling "{}"'.format(f.__name__))
             if application.config.get('ignore_auth'):
                 application.logger.info('ignoring auth creating cake user')
+                session['user_id'] = 'fake-user-id'
                 session['username'] = 'fake-user'
                 session['Atmoscape-Token'] = 'fake-token'
                 return f(*args, **kwargs)
 
-            username = None
-            token = session.get('Atmoscape-Token')
-            userId = None
-            if token is not None:
-                application.logger.info('Token found: "{}"'.format(token))
-                userId = (
-                    application
-                    .config['auth_domain']
-                    .get_user_for_token(token)
-                )
+            session_info = session.get('info')
 
-            if userId is None:
-                application.logger.info('No user id for token -- redirecting')
+            if session_info is None or session_expired(session_info):
+                session['info'] = None
+                application.logger.info('No session info -- redirecting')
                 return redirect(url_for('accounts.get_login_form'))
             else:
+                user_id = session_info['user_id']
                 user, groups = (
                     application
                     .config['auth_domain']
-                    .get_user_by_id(userId)
+                    .get_user_by_id(user_id)
                 )
                 application.logger.info('Got user for token: "{}" in groups: '.format(
                         user,
@@ -50,10 +55,7 @@ class auth_required(object):
                     if self.group not in groups:
                         application.logger.info('Access denied')
                         return redirect(url_for('index'))
-                application.logger.info(
-                    'setting username for session: "{}"'.format(user.username)
-                )
-                session['username'] = user.username
+
                 return f(*args, **kwargs)
 
         return _fn
