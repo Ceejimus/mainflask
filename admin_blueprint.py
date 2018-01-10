@@ -2,7 +2,7 @@
 from flask import current_app as application
 from flask import Blueprint
 from flask import render_template, json, request
-from page_wrappers import auth_required
+from auth_tools import auth_required
 
 admin_bp = Blueprint('admin', __name__, template_folder='templates/admin')
 

@@ -6,8 +6,6 @@ from sqlalchemy import Table, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import BOOLEAN
 from sqlalchemy.orm import sessionmaker, relationship
-import uuid
-import time
 import hashlib
 import os
 
@@ -42,7 +40,6 @@ class AuthDomain():
             isolation_level="READ UNCOMMITTED"
         )
         self.Session = sessionmaker(bind=self.engine)
-        self.tokens = {}
 
     def get_users(self):
         session = self.Session()
@@ -107,9 +104,7 @@ class AuthDomain():
 
         password_hash = hash_password(string_to_bytes(password), user.salt)
         if (password_hash == user.password_hash):
-            token = str(uuid.uuid4())
-            self.add_token(token, user)
-            return token
+            return user
 
         session.close()
         return None
@@ -135,28 +130,6 @@ class AuthDomain():
         session.close()
         return True
 
-
-    def get_user_for_token(self, token):
-        return self.check_token(token)
-
-    def add_token(self, token, user):
-        millis = int(round(time.time()) * 1000)
-        self.tokens[token] = {
-            'userId': user.id,
-            'exp': millis + (12 * 60 * 60 * 1000)
-        }
-
-    def check_token(self, token):
-        if (token not in self.tokens):
-            return None
-        else:
-            millis = int(round(time.time()) * 1000)
-            if (self.tokens[token]['exp'] < millis):
-                self.tokens.pop(token, None)
-                return None
-
-            self.tokens[token]['exp'] = millis + (12 * 60 * 60 * 1000)
-            return self.tokens[token]['userId']
 
 usergroup = Table('usergroup', Base.metadata,
     Column('userid', Integer, ForeignKey('user.id')),
