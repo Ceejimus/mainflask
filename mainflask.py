@@ -21,6 +21,14 @@ def register_domains(application, config):
     application.config['auth_domain'] = AuthDomain(db_host, db_port, db_name, db_user, db_pass)
 
 
+def register_loggers(application, config):
+    import logging
+    from logging.handlers import RotatingFileHandler
+    handler = RotatingFileHandler(config['log_file'], maxBytes=10000, backupCount=2)
+    handler.setLevel(logging.INFO)
+    application.logger.addHandler(handler)
+
+
 def create_app(config):
     with open('flask.key', 'r') as f:
         key = f.read()
@@ -32,6 +40,7 @@ def create_app(config):
     env.filters['tojson'] = json.dumps
 
     register_domains(application, config)
+    register_loggers(application, config)
 
     application.static_url_path = "/static"
     application.secret_key = key
