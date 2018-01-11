@@ -54,8 +54,10 @@ def uploader():
 def upload_file(folder):
     file = request.files.get('file')
     if file is None:
+        application.logger.info('no file provided')
         return json_response({'message': 'No file provided.'}, status_code=400)
-    elif file.name == '' or not allowed_file(file.filename):
+    elif file.filename == '' or not allowed_file(file.filename):
+        application.logger.info('File not allowed "{}"'.format(file.filename))
         return json_response({'message': 'File not allowed.'}, status_code=400)
 
     path, filename = os.path.split(file.filename)
@@ -74,4 +76,5 @@ def upload_file(folder):
     filepath = os.path.join(fullpath, filename)
 
     file.save(filepath)
+    application.logger.info('file saved "{}"'.format(filepath))
     return json.dumps({'success': request.json}), 200, { 'ContentType':'application/json' }
